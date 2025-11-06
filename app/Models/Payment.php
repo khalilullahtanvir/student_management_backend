@@ -22,4 +22,8 @@ class Payment extends Model
     {
         return $this->belongsTo(Enrollment::class);
     }
+    public function paymentInstallments()
+    {
+        return $this->hasMany(PaymentInstallment::class);
+    }
 }

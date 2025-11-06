@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Auth;
 class EnrollmentController extends Controller
 {
     // ইউজার নিজের সব এনরোলমেন্ট দেখানোর জন্য
-    public function myEnrollments()
+    public function index(Request $request)
     {
-        $enrollments = Auth::user()
-            ->with('course') // কোর্সের তথ্য সহিতে লোড করছি
+        $enrollments = Enrollment::where('student_id', $request->student_id)
+            ->with('course', 'payment') // কোর্সের তথ্য সহিতে লোড করছি
             ->latest()
             ->get();
-
+            
         return response()->json($enrollments);
     }
 
@@ -27,10 +27,9 @@ class EnrollmentController extends Controller
             'course_id' => 'required|exists:courses,id',
         ]);
 
-        $user = Auth::user();
-
+        
         // চেক করুন ইউজার আগে থেকেই এই কোর্সে এনরোল করেছে কিনা
-        $existingEnrollment = Enrollment::where('user_id', $user->id)
+        $existingEnrollment = Enrollment::where('student_id', $request->student_id)
                                         ->where('course_id', $request->course_id)
                                         ->first();
 
@@ -38,18 +37,19 @@ class EnrollmentController extends Controller
             return response()->json([
                 'message' => 'You are already enrolled in this course.',
                 'enrollment' => $existingEnrollment
-            ], 409); // 409 Conflict স্ট্যাটাস
+            ], 201); // 409 Conflict স্ট্যাটাস
         }
 
         // নতুন এনরোলমেন্ট তৈরি করুন
         $enrollment = Enrollment::create([
-            'user_id' => $user->id,
+            'student_id' => $request->student_id,
             'course_id' => $request->course_id,
-            'status' => 'pending', // প্রথমে স্ট্টাস 'pending'
+            'status' => 'Approved', 
+            'enroll_date' => now(),
         ]);
 
         return response()->json([
-            'message' => 'Enrollment successful! Please proceed to payment.',
+            'message' => 'Enrollment successful! Please proceed to payment. To pay got to enrollment page',
             'enrollment' => $enrollment
         ], 201);
     }

@@ -4,24 +4,11 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Facades\Auth;
 class StudentController extends Controller
 {
-    public function index()
+    public function register(Request $request)
     {
-        return response()->json(Student::all(), 200);
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:students',
-            'phone' => 'required|string',
-            'address' => 'nullable|string',
-            'password' => 'required|min:6',
-        ]);
-
         $student = Student::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -30,22 +17,30 @@ class StudentController extends Controller
             'photo' => $request->photo,
             'password' => Hash::make($request->password),
         ]);
-
-        return response()->json($student, 201);
+        return response()->json([
+            'message' => 'Registration successful',
+            'student' => $student,
+        ], 201);
     }
 
-    public function show($id)
+    public function login(Request $request)
     {
-        $student = Student::findOrFail($id);
-        return response()->json($student);
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:3',
+        ]);
+        if (!Auth::guard('student')->attempt($validated)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+        $student = Auth::guard('student')->user();
+        $token = $student->createToken('auth_token')->plainTextToken;
+        return response()->json([
+            'message' => 'Login successful',
+            'student' => $student,
+            'token' => $token,
+        ]);
     }
 
-    public function update(Request $request, $id)
-    {
-        $student = Student::findOrFail($id);
-        $student->update($request->all());
-        return response()->json($student);
-    }
 
     public function destroy($id)
     {

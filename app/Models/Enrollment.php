@@ -10,9 +10,10 @@ class Enrollment extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'student_id',
         'course_id',
         'status',
+        'enroll_date',
     ];
 
     // একজন এনরোলমেন্ট একজন ইউজারের সাথে থাকতে পারে
@@ -28,8 +29,8 @@ class Enrollment extends Model
     }
 
     // একটি এনরোলমেন্টের জন্য একাধিক পেমেন্ট হতে পারে
-    public function payments()
+    public function payment()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasOne(Payment::class);
     }
 }
